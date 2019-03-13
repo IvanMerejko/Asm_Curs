@@ -277,14 +277,19 @@ namespace assembler{
         std::string one_lexem;
         std::string delimiters = ":,[]*-";
         for(const auto& word : vectorOfOperands){
-            auto current_delimiter_position = std::find_first_of(word.cbegin() , word.cend() , delimiters.cbegin() , delimiters.cend());
+            auto current_delimiter_position = std::find_first_of(word.cbegin() , word.cend() ,
+                                                                 delimiters.cbegin() , delimiters.cend());
             decltype(current_delimiter_position) previous_delimiter_position = word.cbegin();
+            /*
+             * chech if delimiter is the first symbol in line
+             * */
             while(current_delimiter_position == previous_delimiter_position){
                 lexems.push_back({std::string{*current_delimiter_position} , WordType::ONE_SYMBOLE_LEXEM});
                 if( ++current_delimiter_position == word.cend()){
                     break;
                 } else {
-                    current_delimiter_position = std::find_first_of(current_delimiter_position  , word.cend() , delimiters.cbegin() , delimiters.cend());
+                    current_delimiter_position = std::find_first_of(current_delimiter_position  , word.cend() ,
+                                                                    delimiters.cbegin() , delimiters.cend());
                     ++previous_delimiter_position;
                 }
 
@@ -295,7 +300,8 @@ namespace assembler{
                 lexems.push_back({current_operand , getTypeOfOperand(current_operand)});
                 lexems.push_back({std::string{*current_delimiter_position} , WordType::ONE_SYMBOLE_LEXEM});
                 previous_delimiter_position = current_delimiter_position + 1;
-                current_delimiter_position = std::find_first_of(current_delimiter_position + 1 , word.cend() , delimiters.cbegin() , delimiters.cend());
+                current_delimiter_position = std::find_first_of(current_delimiter_position + 1 , word.cend() ,
+                                                                delimiters.cbegin() , delimiters.cend());
             }
             if(previous_delimiter_position != word.cend() && word.size() != 1){
                 lexems.push_back({std::string{previous_delimiter_position , word.cend()} ,
