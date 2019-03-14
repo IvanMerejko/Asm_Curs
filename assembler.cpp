@@ -61,9 +61,9 @@ namespace assembler{
         auto it = identifiers.insert(std::move(identifier1));
         return !it.second;
     }
-    bool segment::isDeclaredIdentifier(const std::string &new_idintifier) const {
-        return std::find_if(identifiers.cbegin() , identifiers.cend() , [&new_idintifier](const identifier& currentIdentifier){
-            return currentIdentifier.name == new_idintifier;
+    bool segment::isDeclaredIdentifier(const std::string &new_identifier) const {
+        return std::find_if(identifiers.cbegin() , identifiers.cend() , [&new_identifier](const identifier& currentIdentifier){
+            return currentIdentifier.name == new_identifier;
         }) != identifiers.cend();
     }
     void segment::printIdentifiers() {
@@ -71,7 +71,13 @@ namespace assembler{
             it.print();
         }
     }
+    /*                  TODO
+     *
+     *
+     * */
+    bool code::isLabelDeclared(const std::string &identifier) const {
 
+    }
     bool code::pushLabel(assembler::label &&label) {
         auto it = labels.insert(std::move(label));
         return !it.second;
@@ -233,7 +239,7 @@ namespace assembler{
 
 
     bool isDeclaredIdentifier(const std::string& identifier , const data& _data , const code& _code){
-        return _data.isDeclaredIdentifier(identifier) ||  _code.isDeclaredIdentifier(identifier) ;
+        return _data.isDeclaredIdentifier(identifier) ||  _code.isDeclaredIdentifier(identifier) || _code.isLabelDeclared(identifier);
     }
 
 
@@ -251,6 +257,35 @@ namespace assembler{
             return s == ' ' || s == '\t';
         }) , string.end()) ;
     }
+    std::string getStringForAnaliser(WordType type){
+        switch (type){
+            case WordType::IDENTIFIER:
+                return "mitkaIndex";
+        }
+    }
+
+    void syntAnaliser(std::ostream& os , const lexem_type& vectorLexems){
+
+        auto commaPosition = std::find_if(vectorLexems.cbegin() , vectorLexems.cend() , [](const std::pair<std::string , WordType>& lexem){
+            return lexem.first == ",";
+        });
+
+        auto commandPos = std::find_if(vectorLexems.cbegin() , vectorLexems.cend() , [](const std::pair<std::string , WordType>& lexem){
+            return lexem.second == WordType::COMMAND;
+        });
+        if(commandPos == vectorLexems.cbegin()){
+            os << "mitkaIndex = -1,  mnemokodIndex = 0, mnemokodCount = 1 , firstOperandIndex = 1 , firstOperandCount = " << commaPosition - commandPos - 1;
+            if(commaPosition == vectorLexems.cend()){
+                os << ", secondOperandIndex = -1 , secondOperandCount = -1" << std::endl;
+            } else {
+                os << ", secondOperandIndex = " << commaPosition - commandPos + 1 << " , secondOperandCount = "<< vectorLexems.cend() - commaPosition - 1 << std::endl;
+            }
+        } else {
+
+        }
+
+    }
+
 
     WordType getTypeOfOperand(const std::string& operand){
         if(isWordInVector(commandsVector() , operand)){
@@ -268,9 +303,8 @@ namespace assembler{
             return WordType::IDENTIFIER;
         }
     }
-
     lexem_type  lexemParsing(const stringsVector& vectorOfOperands){
-        if(vectorOfOperands.size() == 1){
+        if(vectorOfOperands.size() == 1  && isWordInVector(instructionsVector() , vectorOfOperands.front())){
             return {{vectorOfOperands.front() , WordType::INSTRUCTION}};
         }
         lexem_type lexems;

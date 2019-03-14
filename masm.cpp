@@ -59,9 +59,11 @@ void masm::firstView() {
         /*
          * if we have error with label method return true
          * */
-        if( (isErrorInLine[line] = takeLabelsFromLine()) || wordsInString.empty()) continue;
         auto lexem =  assembler::lexemParsing(wordsInString);
         printLexems(lexem);
+        assembler::syntAnaliser(std::cout , lexem);
+        if( (isErrorInLine[line] = takeLabelsFromLine()) || wordsInString.empty()) continue;
+
         if(assembler::isIdentifier(wordsInString.front())){
             workWithIdentifier();
         } else {
@@ -94,8 +96,9 @@ std::string masm::getStringByType(const std::string& word , const assembler::Wor
     }
 }
 void masm::printLexems(const assembler::lexem_type& lexems){
+    size_t i = 0;
     for(const auto& [word , type] : lexems){
-            std::cout << std::setw(8) << std::left << word << std::setw(6) << word.length() << std::setw(20) << getStringByType(word , type) << std::endl;
+            std::cout << std::setw(4) << std::left << i++ << std::setw(8) << std::left << word << std::setw(6) << word.length() << std::setw(20) << getStringByType(word , type) << std::endl;
 
     }
 }

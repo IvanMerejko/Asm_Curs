@@ -100,6 +100,7 @@ namespace assembler{
     public:
         code() = default;
         bool pushLabel(label&& label) ;
+        bool isLabelDeclared(const std::string& identifier) const;
     };
 
     bool isDeclaredIdentifier(const std::string& identifier , const data& _data , const code& _code);
@@ -136,7 +137,8 @@ namespace assembler{
 
     void removeSpacesAndTabs(std::string& string);
     WordType getTypeOfOperand(const std::string&  operand);
-
+    std::string getStringForAnaliser(WordType type);
+    void syntAnaliser(std::ostream& os , const lexem_type& vectorLexems);
     lexem_type  lexemParsing(const stringsVector& vectorOfOperands );
 
 
