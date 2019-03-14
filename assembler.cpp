@@ -281,7 +281,7 @@ namespace assembler{
                                                                  delimiters.cbegin() , delimiters.cend());
             decltype(current_delimiter_position) previous_delimiter_position = word.cbegin();
             /*
-             * chech if delimiter is the first symbol in line
+             * check if delimiter is the first symbol in line
              * */
             while(current_delimiter_position == previous_delimiter_position){
                 lexems.push_back({std::string{*current_delimiter_position} , WordType::ONE_SYMBOLE_LEXEM});
@@ -297,15 +297,21 @@ namespace assembler{
             while ( current_delimiter_position != word.cend()  ){
                 std::string current_operand {previous_delimiter_position , current_delimiter_position};
                 removeSpacesAndTabs(current_operand);
-                lexems.push_back({current_operand , getTypeOfOperand(current_operand)});
-                lexems.push_back({std::string{*current_delimiter_position} , WordType::ONE_SYMBOLE_LEXEM});
+                lexems.push_back(
+                        {current_operand , getTypeOfOperand(current_operand)}
+                        );
+                lexems.push_back(
+                        {std::string{*current_delimiter_position} , WordType::ONE_SYMBOLE_LEXEM}
+                        );
                 previous_delimiter_position = current_delimiter_position + 1;
                 current_delimiter_position = std::find_first_of(current_delimiter_position + 1 , word.cend() ,
                                                                 delimiters.cbegin() , delimiters.cend());
             }
             if(previous_delimiter_position != word.cend() && word.size() != 1){
-                lexems.push_back({std::string{previous_delimiter_position , word.cend()} ,
-                                  getTypeOfOperand(std::string(previous_delimiter_position , word.cend()))});
+                lexems.push_back(
+                        {std::string{previous_delimiter_position , word.cend()} ,
+                         getTypeOfOperand(std::string(previous_delimiter_position , word.cend()))}
+                         );
             }
 
         }
