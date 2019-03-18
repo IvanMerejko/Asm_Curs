@@ -75,8 +75,10 @@ namespace assembler{
      *
      *
      * */
-    bool code::isLabelDeclared(const std::string &identifier) const {
-
+    bool code::isLabelDeclared(const std::string &label_name) const {
+        return std::find_if(labels.cbegin() , labels.cend(), [&label_name](const label& currectLabel){
+            return currectLabel.name == label_name;
+        }) != labels.cend();
     }
     bool code::pushLabel(assembler::label &&label) {
         auto it = labels.insert(std::move(label));
@@ -245,14 +247,27 @@ namespace assembler{
     }
 
 
-    bool Mov::isCorrectOperands() {};
-    bool Imul::isCorrectOperands() {
+    bool Mov::isCorrectOperands(size_t line) {
+        if(operands.size() != 3){
+            return false;
+        }
+        return isCorrectFirstOperand() && isCorrectSecondOperand();
+    };
+    bool Mov::isCorrectFirstOperand() {
+        return isWordInVector(registers8Vector() , operands.front()) ||
+               isWordInVector(registers16Vector() , operands.front())||
+               isWordInVector(registers32Vector() , operands.front());
+    }
+    bool Mov::isCorrectSecondOperand() {
+        return identifier{"" , IdentifierType::INCORRECT_IDENTIFIER , operands.back()}.isCorrectIdentifierValue();
+    }
+    bool Imul::isCorrectOperands(size_t line) {
         return operands.size() == 1 && (isWordInVector(registers8Vector() , operands.front()) ||
                                         isWordInVector(registers16Vector() , operands.front()) ||
                                         isWordInVector(registers32Vector() , operands.front()) );
-    }; //done 
-    bool Idiv::isCorrectOperands() {};
-    bool Or::isCorrectOperands() {
+    };
+    bool Idiv::isCorrectOperands(size_t line) {};
+    bool Or::isCorrectOperands(size_t line) {
             if(operands.size() != 3){
                 return false;
             }
@@ -268,11 +283,19 @@ namespace assembler{
                isWordInVector(registers16Vector() , operands.back())||
                isWordInVector(registers32Vector() , operands.back());
     }
-    bool Cmp::isCorrectOperands() {};
-    bool Jng::isCorrectOperands() {};
-    bool And::isCorrectOperands() {};
-    bool Add::isCorrectOperands() {};
-    bool Cwde::isCorrectOperands() {};
+    bool Cmp::isCorrectOperands(size_t line) {};
+    bool Jng::isCorrectOperands(size_t line) {
+        if(operands.size() != 1){
+            return false;
+        }
+        userIdentifiers::pushLabel(operands.front() , line);
+        return true;
+    };
+    bool And::isCorrectOperands(size_t line) {};
+    bool Add::isCorrectOperands(size_t line) {};
+    bool Cwde::isCorrectOperands(size_t line) {
+        return operands.empty();
+    };
 
     void removeSpacesAndTabs(std::string& string){
         string.erase(std::remove_if(string.begin() , string.end() , [](char s){
@@ -509,6 +532,15 @@ namespace assembler{
                 return std::make_unique<Add>(operands);
             case CommandName::CWDE:
                 return std::make_unique<Cwde>(operands);
+        }
+    }
+    namespace userIdentifiers{
+
+        void pushLabel(const std::string& name , size_t line){
+            labels[name].push_back(line);
+        }
+        void pushIdentifier(const std::string& name , size_t line){
+            identifiers[name].push_back(line);
         }
     }
 }

@@ -16,6 +16,7 @@ masm::masm(const std::string &file)
 
 void masm::createListingFile() {
     firstView();
+    checkAllUsedButNotDeclaredIdentifiers();
     secondView();
 }
 void masm::secondView() {
@@ -146,7 +147,7 @@ void masm::workWithCommand() {
 
     std::string parameters{};
     for(size_t i = 1 ; i < wordsInString.size() ; ++i) parameters += wordsInString.at(i) + " ";
-    isErrorInLine[line] = !assembler::getPointerForCommandByName(wordsInString.front() , parameters)->isCorrectOperands();
+    isErrorInLine[line] = !assembler::getPointerForCommandByName(wordsInString.front() , parameters)->isCorrectOperands(line);
 
 }
 void masm::workWithIdentifier() {
@@ -205,6 +206,15 @@ bool masm::takeLabelsFromLine() {
     }
     return false;
 }
- bool masm::isLabel(std::string_view  word) {
+bool masm::isLabel(std::string_view  word) {
     return word.back() == ':';
+}
+void masm::checkAllUsedButNotDeclaredIdentifiers(){
+    for(const auto& [name , lines] : assembler::userIdentifiers::labels){
+        if( !_code.isLabelDeclared(name)){
+            for(const auto line : lines){
+                isErrorInLine[line] = true;
+            }
+        }
+    }
 }

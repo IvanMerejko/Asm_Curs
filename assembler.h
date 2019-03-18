@@ -14,6 +14,7 @@
 #include <string_view>
 #include <set>
 #include <memory>
+#include <map>
 
 namespace assembler{
 
@@ -102,7 +103,7 @@ namespace assembler{
     public:
         code() = default;
         bool pushLabel(label&& label) ;
-        bool isLabelDeclared(const std::string& identifier) const;
+        bool isLabelDeclared(const std::string& label_name) const;
     };
 
     bool isDeclaredIdentifier(const std::string& identifier , const data& _data , const code& _code);
@@ -158,7 +159,7 @@ namespace assembler{
             splitByDelimiters("," , operands);
         };
         virtual ~Command() = default;
-        virtual bool isCorrectOperands() = 0;
+        virtual bool isCorrectOperands(size_t line) = 0;
     };
     class Mov : public Command{
     public:
@@ -166,7 +167,9 @@ namespace assembler{
         explicit Mov(const std::string& string)
             :Command(string){};
         ~Mov() override = default ;
-        bool isCorrectOperands() override ;
+        bool isCorrectOperands(size_t line) override ;
+        bool isCorrectFirstOperand();
+        bool isCorrectSecondOperand();
     };
     class Imul : public Command{
     public:
@@ -174,7 +177,7 @@ namespace assembler{
         explicit Imul(const std::string& string)
                 :Command(string){};
         ~Imul() override = default ;
-        bool isCorrectOperands() override;
+        bool isCorrectOperands(size_t line) override;
     };
     class Idiv : public Command{
     public:
@@ -182,7 +185,7 @@ namespace assembler{
         explicit Idiv(const std::string& string)
                 :Command(string){};
         ~Idiv() override = default ;
-        bool isCorrectOperands() override;
+        bool isCorrectOperands(size_t line) override;
     };
     class Or : public Command{
     public:
@@ -190,7 +193,7 @@ namespace assembler{
         explicit Or(const std::string& string)
                 :Command(string){};
         ~Or() override = default ;
-        bool isCorrectOperands() override;
+        bool isCorrectOperands(size_t line) override;
         bool isCorrectFirstOperand();
         bool isCorrectSecondOperand();
     };
@@ -200,7 +203,7 @@ namespace assembler{
         explicit Cmp(const std::string& string)
                 :Command(string){};
         ~Cmp() override = default ;
-        bool isCorrectOperands() override;
+        bool isCorrectOperands(size_t line) override;
     };
     class Jng : public Command{
     public:
@@ -208,7 +211,7 @@ namespace assembler{
         explicit Jng(const std::string& string)
                 :Command(string){};
         ~Jng() override = default ;
-        bool isCorrectOperands() override ;
+        bool isCorrectOperands(size_t line) override ;
     };
     class And : public Command{
     public:
@@ -216,7 +219,7 @@ namespace assembler{
         explicit And(const std::string& string)
                 :Command(string){};
         ~And() override = default ;
-        bool isCorrectOperands() override;
+        bool isCorrectOperands(size_t line) override;
     };
     class Add : public Command{
     public:
@@ -224,7 +227,7 @@ namespace assembler{
         explicit Add(const std::string& string)
                 :Command(string){};
         ~Add() override = default ;
-        bool isCorrectOperands() override;
+        bool isCorrectOperands(size_t line) override;
     };
     class Cwde : public Command{
     public:
@@ -232,11 +235,21 @@ namespace assembler{
         explicit Cwde(const std::string& string)
                 :Command(string){};
         ~Cwde() override = default ;
-        bool isCorrectOperands() override ;
+        bool isCorrectOperands(size_t line) override ;
     };
 
 
 
     std::unique_ptr<Command> getPointerForCommandByName(std::string_view command , const std::string& operands);
+
+    namespace userIdentifiers{
+        static std::map<std::string , std::vector<size_t>> labels;
+        static std::map<std::string , std::vector<size_t>> identifiers;
+
+        void pushLabel(const std::string& name , size_t line);
+        void pushIdentifier(const std::string& name , size_t line);
+
+    }
+
 }
 #endif //CURS_ASSEMBLER_H

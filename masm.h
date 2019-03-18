@@ -37,7 +37,8 @@ private:
     bool takeLabelsFromLine();
     inline bool isLabel(std::string_view  word);
     void printLexems(const assembler::lexem_type& lexems);
-    std::string getStringByType(const std::string& word , const assembler::WordType type);
+    std::string getStringByType(const std::string& word , assembler::WordType type);
+    void checkAllUsedButNotDeclaredIdentifiers();
 };
 
 
