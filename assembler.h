@@ -21,6 +21,7 @@ namespace assembler{
 
 
 
+
     using stringsVector = std::vector<std::string>;
     enum class WordType{
         IDENTIFIER,
@@ -49,6 +50,7 @@ namespace assembler{
          JNG    = 6,
          AND    = 7,
          ADD    = 8,
+        CWDE    = 9
     };
 
 
@@ -136,80 +138,101 @@ namespace assembler{
     using lexem_type = std::vector<std::pair<std::string , WordType>>;
 
     void removeSpacesAndTabs(std::string& string);
-    WordType getTypeOfOperand(const std::string&  operand);
-    std::string getStringForAnaliser(WordType type);
+    WordType getTypeOfOperand(const std::string&  operand );
+
     void syntAnaliser(std::ostream& os , const lexem_type& vectorLexems);
     lexem_type  lexemParsing(const stringsVector& vectorOfOperands );
 
 
 
 
-
+    void splitByDelimiters(const std::string& delimiters  , stringsVector & vector);
 
     class Command{
-    private:
+    protected:
         std::vector<std::string> operands;
     public:
         Command() = default;
-        explicit Command(const std::string&){};
+        explicit Command(const std::string& string){
+            createVectorOfWordsFromString(string , operands);
+            splitByDelimiters("," , operands);
+        };
         virtual ~Command() = default;
-        virtual bool isCorrectOperand() = 0;
+        virtual bool isCorrectOperands() = 0;
     };
     class Mov : public Command{
     public:
         Mov() = default;
-        explicit Mov(const std::string&){};
+        explicit Mov(const std::string& string)
+            :Command(string){};
         ~Mov() override = default ;
-        bool isCorrectOperand() override ;
+        bool isCorrectOperands() override ;
     };
     class Imul : public Command{
     public:
         Imul() = default;
-        explicit Imul(const std::string&){};
+        explicit Imul(const std::string& string)
+                :Command(string){};
         ~Imul() override = default ;
-        bool isCorrectOperand() override;
+        bool isCorrectOperands() override;
     };
     class Idiv : public Command{
     public:
         Idiv() = default;
-        explicit Idiv(const std::string&){};
+        explicit Idiv(const std::string& string)
+                :Command(string){};
         ~Idiv() override = default ;
-        bool isCorrectOperand() override;
+        bool isCorrectOperands() override;
     };
     class Or : public Command{
     public:
         Or() = default;
-        explicit Or(const std::string&){};
+        explicit Or(const std::string& string)
+                :Command(string){};
         ~Or() override = default ;
-        bool isCorrectOperand() override;
+        bool isCorrectOperands() override;
+        bool isCorrectFirstOperand();
+        bool isCorrectSecondOperand();
     };
     class Cmp : public Command{
     public:
         Cmp() = default;
-        explicit Cmp(const std::string&){};
+        explicit Cmp(const std::string& string)
+                :Command(string){};
         ~Cmp() override = default ;
-        bool isCorrectOperand() override;
+        bool isCorrectOperands() override;
     };
     class Jng : public Command{
     public:
         Jng() = default;
-        explicit Jng(const std::string&){};
+        explicit Jng(const std::string& string)
+                :Command(string){};
         ~Jng() override = default ;
-        bool isCorrectOperand() override ;
+        bool isCorrectOperands() override ;
     };
     class And : public Command{
     public:
         And() = default;
-        explicit And(const std::string&){};
+        explicit And(const std::string& string)
+                :Command(string){};
         ~And() override = default ;
-        bool isCorrectOperand() override;
+        bool isCorrectOperands() override;
     };
     class Add : public Command{
     public:
         Add() = default;
-        explicit Add(const std::string&){};
+        explicit Add(const std::string& string)
+                :Command(string){};
         ~Add() override = default ;
-        bool isCorrectOperand() override ;
+        bool isCorrectOperands() override;
+    };
+    class Cwde : public Command{
+    public:
+        Cwde() = default;
+        explicit Cwde(const std::string& string)
+                :Command(string){};
+        ~Cwde() override = default ;
+        bool isCorrectOperands() override ;
     };
 
 

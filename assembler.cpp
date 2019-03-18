@@ -100,7 +100,8 @@ namespace assembler{
                 "cmp",
                 "jng",
                 "and",
-                "add"
+                "add",
+                "cwde"
 
         };
         return commands;
@@ -127,6 +128,7 @@ namespace assembler{
                 "eax",
                 "ebx",
                 "edx",
+                "ecx",
                 "esi",
                 "edi"
         };
@@ -243,26 +245,42 @@ namespace assembler{
     }
 
 
-    bool Mov::isCorrectOperand() {};
-    bool Imul::isCorrectOperand() {};
-    bool Idiv::isCorrectOperand() {};
-    bool Or::isCorrectOperand() {};
-    bool Cmp::isCorrectOperand() {};
-    bool Jng::isCorrectOperand() {};
-    bool And::isCorrectOperand() {};
-    bool Add::isCorrectOperand() {};
+    bool Mov::isCorrectOperands() {};
+    bool Imul::isCorrectOperands() {
+        return operands.size() == 1 && (isWordInVector(registers8Vector() , operands.front()) ||
+                                        isWordInVector(registers16Vector() , operands.front()) ||
+                                        isWordInVector(registers32Vector() , operands.front()) );
+    }; //done 
+    bool Idiv::isCorrectOperands() {};
+    bool Or::isCorrectOperands() {
+            if(operands.size() != 3){
+                return false;
+            }
+        return isCorrectFirstOperand() && isCorrectSecondOperand();
+    };
+    bool Or::isCorrectFirstOperand() {
+        return isWordInVector(registers8Vector() , operands.front()) ||
+               isWordInVector(registers16Vector() , operands.front())||
+               isWordInVector(registers32Vector() , operands.front());
+    }
+    bool Or::isCorrectSecondOperand() {
+        return isWordInVector(registers8Vector() , operands.back()) ||
+               isWordInVector(registers16Vector() , operands.back())||
+               isWordInVector(registers32Vector() , operands.back());
+    }
+    bool Cmp::isCorrectOperands() {};
+    bool Jng::isCorrectOperands() {};
+    bool And::isCorrectOperands() {};
+    bool Add::isCorrectOperands() {};
+    bool Cwde::isCorrectOperands() {};
 
     void removeSpacesAndTabs(std::string& string){
         string.erase(std::remove_if(string.begin() , string.end() , [](char s){
             return s == ' ' || s == '\t';
         }) , string.end()) ;
     }
-    std::string getStringForAnaliser(WordType type){
-        switch (type){
-            case WordType::IDENTIFIER:
-                return "mitkaIndex";
-        }
-    }
+
+
 
     void syntAnaliser(std::ostream& os , const lexem_type& vectorLexems){
 
@@ -273,16 +291,76 @@ namespace assembler{
         auto commandPos = std::find_if(vectorLexems.cbegin() , vectorLexems.cend() , [](const std::pair<std::string , WordType>& lexem){
             return lexem.second == WordType::COMMAND;
         });
-        if(commandPos == vectorLexems.cbegin()){
-            os << "mitkaIndex = -1,  mnemokodIndex = 0, mnemokodCount = 1 , firstOperandIndex = 1 , firstOperandCount = " << commaPosition - commandPos - 1;
-            if(commaPosition == vectorLexems.cend()){
-                os << ", secondOperandIndex = -1 , secondOperandCount = -1" << std::endl;
+        auto first = vectorLexems.front();
+
+        if(first.second == WordType::IDENTIFIER){
+            if(commandPos == vectorLexems.cend()){
+                    auto directive = std::find_if(vectorLexems.cbegin() , vectorLexems.cend() , [](const std::pair<std::string , WordType>& lexem){
+                        return lexem.second == WordType::DIRECTIVE;
+                    });
+                if(directive == vectorLexems.end()){
+                    os    << "mitkaIndex = 0, "
+                          << "mnemokodIndex = -1"
+                          << ", mnemokodCount =  -1"
+                          << ", firstOperandIndex = -1"
+                          << ", firstOperandCount = -1"
+                          << ", secondOperandIndex = -1 , "
+                           << "secondOperandCount = -1" << std::endl;
+                } else {
+                    os    << "mitkaIndex = 0, "
+                          << "mnemokodIndex = 1"
+                          << ", mnemokodCount =  1"
+                          << ", firstOperandIndex = 2"
+                          << ", firstOperandCount = 1"
+                          << ", secondOperandIndex = -1 , "
+                          << "secondOperandCount = -1" << std::endl;
+                }
             } else {
-                os << ", secondOperandIndex = " << commaPosition - commandPos + 1 << " , secondOperandCount = "<< vectorLexems.cend() - commaPosition - 1 << std::endl;
+                os    << "mitkaIndex = 0, "
+                      << "mnemokodIndex = " << commandPos - vectorLexems.begin()
+                      << ", mnemokodCount =  1"
+                      << ", firstOperandIndex = " << commandPos - vectorLexems.begin() + 1
+                      << ", firstOperandCount = " << commaPosition - commandPos - 1;
+                if(commaPosition == vectorLexems.cend()){
+                    os << ", secondOperandIndex = -1 , "
+                       << "secondOperandCount = -1" << std::endl;
+                } else {
+                    os << ", secondOperandIndex = " << commaPosition - vectorLexems.begin() + 1
+                       << " , secondOperandCount = "<< vectorLexems.cend() - commaPosition - 1 << std::endl;
+                }
+            }
+        } else if (first.second == WordType::COMMAND){
+            os << "mitkaIndex     = -1,  "
+               << "mnemokodIndex  = 0, "
+               << "mnemokodCount  = 1 , ";
+                  if(vectorLexems.size() == 1){
+                      os  << "firstOperandIndex = -1 , "
+                          << "firstOperandCount = -1" ;
+                  } else {
+                      os  << "firstOperandIndex = 1 , "
+                          << "firstOperandCount = " << commaPosition - commandPos - 1;
+                  }
+
+
+            if(commaPosition == vectorLexems.cend()){
+                os << ", secondOperandIndex = -1 , "
+                   << "secondOperandCount = -1" << std::endl;
+            } else {
+                os << ", secondOperandIndex = " << commaPosition - commandPos + 1
+                   << " , secondOperandCount = "<< vectorLexems.cend() - commaPosition - 1 << std::endl;
             }
         } else {
-
+            os    << "mitkaIndex = -1,  "
+                  << "mnemokodIndex = 0"
+                  << ", mnemokodCount =  1"
+                  << ", firstOperandIndex = -1"
+                  << ", firstOperandCount = -1"
+                  << ", secondOperandIndex = -1 , "
+                  << "secondOperandCount = -1" << std::endl;
         }
+
+
+
 
     }
 
@@ -304,6 +382,7 @@ namespace assembler{
         }
     }
     lexem_type  lexemParsing(const stringsVector& vectorOfOperands){
+
         if(vectorOfOperands.size() == 1  && isWordInVector(instructionsVector() , vectorOfOperands.front())){
             return {{vectorOfOperands.front() , WordType::INSTRUCTION}};
         }
@@ -341,11 +420,18 @@ namespace assembler{
                 current_delimiter_position = std::find_first_of(current_delimiter_position + 1 , word.cend() ,
                                                                 delimiters.cbegin() , delimiters.cend());
             }
-            if(previous_delimiter_position != word.cend() && word.size() != 1){
+            if(previous_delimiter_position != word.cend() && word.size() != 1 ){
                 lexems.push_back(
                         {std::string{previous_delimiter_position , word.cend()} ,
                          getTypeOfOperand(std::string(previous_delimiter_position , word.cend()))}
                          );
+            }
+            std::string oneValue = "1234567890";
+            if(std::find(oneValue.begin() , oneValue.end() , word.front()) != oneValue.end() && word.size() == 1 ){
+                lexems.push_back(
+                        {std::string{previous_delimiter_position , word.cend()} ,
+                         WordType ::CONSTANT}
+                );
             }
 
         }
@@ -353,6 +439,48 @@ namespace assembler{
         return lexems;
     };
 
+
+
+    void splitByDelimiters(const std::string& delimiters  , stringsVector& wordsInString){
+        stringsVector newVector;
+        for(const auto& word : wordsInString){
+            auto current_delimiter_position = std::find_first_of(word.cbegin() , word.cend() ,
+                                                                 delimiters.cbegin() , delimiters.cend());
+            decltype(current_delimiter_position) previous_delimiter_position = word.cbegin();
+            /*
+             * check if delimiter is the first symbol in line
+             * */
+            while(current_delimiter_position == previous_delimiter_position){
+                newVector.push_back(std::string{*current_delimiter_position} );
+
+                if( ++current_delimiter_position == word.cend()){
+                    break;
+                } else {
+                    current_delimiter_position = std::find_first_of(current_delimiter_position  , word.cend() ,
+                                                                    delimiters.cbegin() , delimiters.cend());
+                    ++previous_delimiter_position;
+                }
+
+            }
+            while ( current_delimiter_position != word.cend()  ){
+                std::string current_operand {previous_delimiter_position , current_delimiter_position};
+                removeSpacesAndTabs(current_operand);
+                newVector.push_back(current_operand);
+                newVector.push_back(std::string{*current_delimiter_position});
+                previous_delimiter_position = current_delimiter_position + 1;
+                current_delimiter_position = std::find_first_of(current_delimiter_position + 1 , word.cend() ,
+                                                                delimiters.cbegin() , delimiters.cend());
+            }
+            if(previous_delimiter_position != word.cend() && word.size() != 1 ){
+                newVector.push_back(std::string{previous_delimiter_position , word.cend()});
+            }
+            std::string oneValue = "1234567890";
+            if(std::find(oneValue.begin() , oneValue.end() , word.front()) != oneValue.end() && word.size() == 1 ){
+                newVector.push_back(std::string{previous_delimiter_position , word.cend()});
+            }
+        }
+        wordsInString = std::move(newVector);
+    }
     std::unique_ptr<Command> getPointerForCommandByName(std::string_view command , const std::string& operands){
         size_t numberOfCommand = 0;
         auto commands = commandsVector();
@@ -379,6 +507,8 @@ namespace assembler{
                 return std::make_unique<And>(operands);
             case CommandName::ADD:
                 return std::make_unique<Add>(operands);
+            case CommandName::CWDE:
+                return std::make_unique<Cwde>(operands);
         }
     }
 }

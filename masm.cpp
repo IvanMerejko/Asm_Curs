@@ -16,7 +16,7 @@ masm::masm(const std::string &file)
 
 void masm::createListingFile() {
     firstView();
-    //secondView();
+    secondView();
 }
 void masm::secondView() {
     std::ifstream asmFile(asmFileName );
@@ -51,18 +51,23 @@ void masm::firstView() {
     std::string oneStringFromAsmFile;
     while (std::getline(asmFile , oneStringFromAsmFile) && !endOfFile){
         ++line;
-        std::cout << oneStringFromAsmFile << std::endl;
-
 
         assembler::createVectorOfWordsFromString(oneStringFromAsmFile , wordsInString);
         if(wordsInString.empty()) continue;
         /*
+         *              LEXEM PARSING FOR FIRST TASK
+         * */
+        /*auto lexem =  assembler::lexemParsing(wordsInString);
+        printLexems(lexem);
+        assembler::syntAnaliser(std::cout , lexem);*/
+
+        /*
          * if we have error with label method return true
          * */
-        auto lexem =  assembler::lexemParsing(wordsInString);
-        printLexems(lexem);
-        assembler::syntAnaliser(std::cout , lexem);
-        if( (isErrorInLine[line] = takeLabelsFromLine()) || wordsInString.empty()) continue;
+        if( (isErrorInLine[line] = takeLabelsFromLine()) || wordsInString.empty()) {
+            wordsInString.clear();
+            continue;
+        }
 
         if(assembler::isIdentifier(wordsInString.front())){
             workWithIdentifier();
@@ -141,7 +146,7 @@ void masm::workWithCommand() {
 
     std::string parameters{};
     for(size_t i = 1 ; i < wordsInString.size() ; ++i) parameters += wordsInString.at(i) + " ";
-    isErrorInLine[line] = assembler::getPointerForCommandByName(wordsInString.front() , parameters)->isCorrectOperand();
+    isErrorInLine[line] = !assembler::getPointerForCommandByName(wordsInString.front() , parameters)->isCorrectOperands();
 
 }
 void masm::workWithIdentifier() {
