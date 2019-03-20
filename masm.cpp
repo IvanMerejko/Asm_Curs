@@ -16,8 +16,8 @@ masm::masm(const std::string &file)
 
 void masm::createListingFile() {
     firstView();
-    checkAllUsedButNotDeclaredIdentifiers();
-    secondView();
+    /*checkAllUsedButNotDeclaredIdentifiers();
+    secondView();*/
 }
 void masm::secondView() {
     std::ifstream asmFile(asmFileName );
@@ -58,9 +58,11 @@ void masm::firstView() {
         /*
          *              LEXEM PARSING FOR FIRST TASK
          * */
-        /*auto lexem =  assembler::lexemParsing(wordsInString);
+        auto lexem =  assembler::lexemParsing(wordsInString);
+        std::cout << oneStringFromAsmFile << std::endl;
         printLexems(lexem);
-        assembler::syntAnaliser(std::cout , lexem);*/
+
+        assembler::syntAnaliser(std::cout , lexem);
 
         /*
          * if we have error with label method return true

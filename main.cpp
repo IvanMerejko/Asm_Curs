@@ -4,8 +4,8 @@
 
 
 int main() {
-
     
+
     masm{"ts.asm"}.createListingFile();
     return 0;
 }

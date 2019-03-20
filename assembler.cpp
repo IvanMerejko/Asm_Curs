@@ -121,7 +121,8 @@ namespace assembler{
                 ".data",
                 ".code",
                 "end",
-                "model"
+                "model",
+                "small"
         };
         return instructions;
     }
@@ -375,11 +376,19 @@ namespace assembler{
         } else {
             os    << "mitkaIndex = -1,  "
                   << "mnemokodIndex = 0"
-                  << ", mnemokodCount =  1"
-                  << ", firstOperandIndex = -1"
-                  << ", firstOperandCount = -1"
-                  << ", secondOperandIndex = -1 , "
-                  << "secondOperandCount = -1" << std::endl;
+                  << ", mnemokodCount =  1";
+                  if(vectorLexems.size() == 1){
+                      os      << ", firstOperandIndex = -1"
+                              << ", firstOperandCount = -1"
+                              << ", secondOperandIndex = -1 , "
+                              << "secondOperandCount = -1" << std::endl;
+                  } else {
+                      os      << ", firstOperandIndex = 2"
+                              << ", firstOperandCount = 1"
+                              << ", secondOperandIndex = -1 , "
+                              << "secondOperandCount = -1" << std::endl;
+                  }
+
         }
 
 
@@ -400,18 +409,17 @@ namespace assembler{
             return WordType::DIRECTIVE;
         } else if (identifier{"" , IdentifierType::INCORRECT_IDENTIFIER , operand}.isCorrectIdentifierValue()){
             return WordType::CONSTANT;
+        } else if (isWordInVector(instructionsVector() , operand)){
+            return WordType::INSTRUCTION;
         } else {
             return WordType::IDENTIFIER;
         }
     }
     lexem_type  lexemParsing(const stringsVector& vectorOfOperands){
-
-        if(vectorOfOperands.size() == 1  && isWordInVector(instructionsVector() , vectorOfOperands.front())){
-            return {{vectorOfOperands.front() , WordType::INSTRUCTION}};
-        }
         lexem_type lexems;
+
         std::string one_lexem;
-        std::string delimiters = ":,[]*-";
+        std::string delimiters = "{}:,[]*-";
         for(const auto& word : vectorOfOperands){
             auto current_delimiter_position = std::find_first_of(word.cbegin() , word.cend() ,
                                                                  delimiters.cbegin() , delimiters.cend());
