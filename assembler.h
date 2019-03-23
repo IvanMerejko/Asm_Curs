@@ -51,7 +51,8 @@ namespace assembler{
          JNG    = 6,
          AND    = 7,
          ADD    = 8,
-        CWDE    = 9
+        CWDE    = 9,
+        MODEL   =10,
     };
 
 
@@ -120,13 +121,15 @@ namespace assembler{
     bool isCommand(std::string_view word);
     bool isDirective(std::string_view word);
     bool isInstruction(std::string_view word);
+    bool isIdentifier(std::string_view word);
+    bool isRegister(const std::string& string);
     bool isReservedWord(std::string_view word);
 
 
     void createVectorOfWordsFromString(const std::string&  string , stringsVector& wordsInString)  ;
 
 
-    bool isIdentifier(std::string_view word);
+
 
 
     size_t directivePosition(std::string_view directive);
@@ -156,11 +159,14 @@ namespace assembler{
     public:
         Command() = default;
         explicit Command(const std::string& string){
-            createVectorOfWordsFromString(string , operands);
-            splitByDelimiters("," , operands);
+            std::string help{string};
+            removeSpacesAndTabs(help);
+            createVectorOfWordsFromString(help , operands);
+            splitByDelimiters("{}," , operands);
         };
         virtual ~Command() = default;
         virtual bool isCorrectOperands(size_t line) = 0;
+
     };
     class Mov : public Command{
     public:
@@ -184,7 +190,9 @@ namespace assembler{
     public:
         Idiv() = default;
         explicit Idiv(const std::string& string)
-                :Command(string){};
+                :Command(string){
+            splitByDelimiters("[]*" , operands);
+        };
         ~Idiv() override = default ;
         bool isCorrectOperands(size_t line) override;
     };
@@ -205,6 +213,8 @@ namespace assembler{
                 :Command(string){};
         ~Cmp() override = default ;
         bool isCorrectOperands(size_t line) override;
+        bool isCorrectFirstOperand();
+        bool isCorrectSecondOperand(size_t line);
     };
     class Jng : public Command{
     public:
@@ -221,6 +231,8 @@ namespace assembler{
                 :Command(string){};
         ~And() override = default ;
         bool isCorrectOperands(size_t line) override;
+        bool isCorrectFirstOperand(size_t line);
+        bool isCorrectSecondOperand();
     };
     class Add : public Command{
     public:
@@ -240,17 +252,26 @@ namespace assembler{
         ~Cwde() override = default ;
         bool isCorrectOperands(size_t line) override ;
     };
-
+    class Model : public Command{
+    public:
+        Model() = default;
+        explicit Model(const std::string& string)
+                :Command(string){};
+        ~Model() override = default ;
+        bool isCorrectOperands(size_t line) override ;
+    };
 
 
     std::unique_ptr<Command> getPointerForCommandByName(std::string_view command , const std::string& operands);
 
     namespace userIdentifiers{
-        static std::map<std::string , std::vector<size_t>> labels;
-        static std::map<std::string , std::vector<size_t>> identifiers;
+        using  mapOfIdentifiers = std::map<std::string , std::vector<size_t>>;
+        mapOfIdentifiers& getLabels();
+        mapOfIdentifiers& getIdentifiers();
 
-        void pushLabel(const std::string& name , size_t line);
-        void pushIdentifier(const std::string& name , size_t line);
+
+        static void pushLabel(const std::string& name , size_t line);
+        static void pushIdentifier(const std::string& name , size_t line);
 
     }
 

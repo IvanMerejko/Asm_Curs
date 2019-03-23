@@ -103,7 +103,8 @@ namespace assembler{
                 "jng",
                 "and",
                 "add",
-                "cwde"
+                "cwde",
+                "model"
 
         };
         return commands;
@@ -171,9 +172,7 @@ namespace assembler{
 
     bool isWordInVector(const stringsVector &vector, std::string_view word) {
         std::string tmp{word};
-        tmp.erase(std::remove_if(tmp.begin() , tmp.end() , [](char s){
-            return s == ' ' || s == '\t';
-        }) , tmp.end());
+        removeSpacesAndTabs(tmp);
         for(const auto &it : vector){
             std::transform(tmp.begin() , tmp.end() ,tmp.begin(), ::tolower );
             if(tmp == it) {
@@ -191,6 +190,11 @@ namespace assembler{
     bool isInstruction(std::string_view word) {
         return isWordInVector(instructionsVector() , word);
     }
+    bool isRegister(const std::string &string) {
+        return isWordInVector(registers8Vector()  , string) ||
+               isWordInVector(registers16Vector() , string) ||
+               isWordInVector(registers32Vector() , string);
+    };
     bool isReservedWord(std::string_view word) {
         return isWordInVector(registers16Vector() , word)       ||
                isWordInVector(registers8Vector() , word)        ||
@@ -248,6 +252,8 @@ namespace assembler{
     }
 
 
+
+    /************   Mov     *************/
     bool Mov::isCorrectOperands(size_t line) {
         if(operands.size() != 3){
             return false;
@@ -255,19 +261,27 @@ namespace assembler{
         return isCorrectFirstOperand() && isCorrectSecondOperand();
     };
     bool Mov::isCorrectFirstOperand() {
-        return isWordInVector(registers8Vector() , operands.front()) ||
-               isWordInVector(registers16Vector() , operands.front())||
-               isWordInVector(registers32Vector() , operands.front());
+        return isRegister(operands.front());
     }
     bool Mov::isCorrectSecondOperand() {
         return identifier{"" , IdentifierType::INCORRECT_IDENTIFIER , operands.back()}.isCorrectIdentifierValue();
     }
+    /************   Mov     *************/
+
+    /************   Imul     *************/
     bool Imul::isCorrectOperands(size_t line) {
-        return operands.size() == 1 && (isWordInVector(registers8Vector() , operands.front()) ||
-                                        isWordInVector(registers16Vector() , operands.front()) ||
-                                        isWordInVector(registers32Vector() , operands.front()) );
+        return operands.size() == 1 && isRegister(operands.front());
     };
-    bool Idiv::isCorrectOperands(size_t line) {};
+    /************   Imul     *************/
+
+    /************   Idiv     *************/
+    bool Idiv::isCorrectOperands(size_t line) {
+
+        return isCorrectAddressExpression(operands , line);
+    };
+    /************   Idiv     *************/
+
+    /************   Or     *************/
     bool Or::isCorrectOperands(size_t line) {
             if(operands.size() != 3){
                 return false;
@@ -275,16 +289,31 @@ namespace assembler{
         return isCorrectFirstOperand() && isCorrectSecondOperand() && operands[1] == ",";
     };
     bool Or::isCorrectFirstOperand() {
-        return isWordInVector(registers8Vector() , operands.front()) ||
-               isWordInVector(registers16Vector() , operands.front())||
-               isWordInVector(registers32Vector() , operands.front());
+        return isRegister(operands.front());
     }
     bool Or::isCorrectSecondOperand() {
-        return isWordInVector(registers8Vector() , operands.back()) ||
-               isWordInVector(registers16Vector() , operands.back())||
-               isWordInVector(registers32Vector() , operands.back());
+        return isRegister(operands.back());
     }
-    bool Cmp::isCorrectOperands(size_t line) {};
+    /************   Or     *************/
+
+    /************   Cmp     *************/
+    bool Cmp::isCorrectOperands(size_t line) {
+        if(operands.size() != 3){
+            return false;
+        }
+        return isCorrectFirstOperand() && isCorrectSecondOperand(line) && operands[1] == ",";
+    };
+    bool Cmp::isCorrectFirstOperand() {
+        return isRegister(operands.front());
+    }
+    bool Cmp::isCorrectSecondOperand(size_t line) {
+        stringsVector firstOperand{operands.back()};
+        splitByDelimiters(":[*]" , firstOperand);
+        return isCorrectAddressExpression(firstOperand , line);
+    }
+    /************   Cmp     *************/
+
+    /************   Jng     *************/
     bool Jng::isCorrectOperands(size_t line) {
         if(operands.size() != 1){
             return false;
@@ -292,7 +321,26 @@ namespace assembler{
         userIdentifiers::pushLabel(operands.front() , line);
         return true;
     };
-    bool And::isCorrectOperands(size_t line) {};
+    /************   Jng     *************/
+
+    /************   And     *************/
+    bool And::isCorrectOperands(size_t line) {
+        if(operands.size() != 3){
+            return false;
+        }
+        return isCorrectFirstOperand(line) && isCorrectSecondOperand() && operands[1] == ",";
+    };
+    bool And::isCorrectFirstOperand(size_t line) {
+        stringsVector firstOperand{operands.front()};
+        splitByDelimiters(":[*]" , firstOperand);
+        return isCorrectAddressExpression(firstOperand , line);
+    }
+    bool And::isCorrectSecondOperand() {
+        return isRegister(operands.back());
+    }
+    /************   And     *************/
+
+    /************   Add     *************/
     bool Add::isCorrectOperands(size_t line) {
         if(operands.size() != 3){
             return false;
@@ -308,10 +356,20 @@ namespace assembler{
         splitByDelimiters(":[*]" , firstOperand);
         return isCorrectAddressExpression(firstOperand , line);
     }
+    /************   Add     *************/
+
+    /************   Cwde     *************/
     bool Cwde::isCorrectOperands(size_t line) {
         return operands.empty();
     };
-
+    /************   Cwde     *************/
+    /************   Model     *************/
+    bool Model::isCorrectOperands(size_t line) {
+        return operands[0] == "{" &&
+               isWordInVector({"small"} , operands[1]) &&
+               operands[2] == "}";
+    };
+    /************   Model     *************/
     void removeSpacesAndTabs(std::string& string){
         string.erase(std::remove_if(string.begin() , string.end() , [](char s){
             return s == ' ' || s == '\t';
@@ -414,9 +472,7 @@ namespace assembler{
     WordType getTypeOfOperand(const std::string& operand){
         if(isWordInVector(commandsVector() , operand)){
             return WordType::COMMAND;
-        } else if(isWordInVector(registers8Vector() , operand)  ||
-                  isWordInVector(registers16Vector() , operand) ||
-                  isWordInVector(registers32Vector() , operand) ||
+        } else if(isRegister(operand) ||
                   isWordInVector(segmentRegisters() , operand)  ){
             return WordType::REGISTER;
         } else if(isWordInVector(directivesVector() , operand)) {
@@ -527,35 +583,52 @@ namespace assembler{
         wordsInString = std::move(newVector);
     }
     bool isCorrectAddressExpression(const stringsVector& operands , size_t line){
-        if(operands.size() == 1){
-            userIdentifiers::pushIdentifier(operands.back() ,line);
-            return true;
-        }else if(operands.size() == 6){
-           if(isCorrectExpressionBetweenParentheses({operands[1] ,
-                                                     operands[2] ,
-                                                     operands[3] ,
-                                                     operands[4] ,
-                                                     operands[5] })){
-               userIdentifiers::pushIdentifier(operands.front() , line);
-               return true;
-           } else {
-               return false;
-           }
-        } else if(operands.size() == 8){
-            if(isWordInVector(segmentRegisters() , operands.front()) && operands[1] == ":" &&
-               isCorrectExpressionBetweenParentheses({operands[3] ,
-                                                      operands[4] ,
-                                                      operands[5] ,
-                                                      operands[6] ,
-                                                      operands[7] })){
-                userIdentifiers::pushIdentifier(operands[2] , line);
+        switch (operands.size()){
+            case 1:
+                userIdentifiers::pushIdentifier(operands.back() ,line);
                 return true;
-            } else {
+            case 3:
+                if(isWordInVector(segmentRegisters() , operands.front()) && operands[1] == ":"){
+                    userIdentifiers::pushIdentifier(operands.back() , line);
+                    return true;
+                } else {
+                    return false;
+                }
+            case 4:
+                if(operands[1] == "[" && operands.back() == "]" && isRegister(operands[2]) ){
+                    userIdentifiers::pushIdentifier(operands.front() ,line);
+                    return true;
+                } else {
+                    return false;
+                }
+            case 6:
+                if(isCorrectExpressionBetweenParentheses({operands[1] ,
+                                                          operands[2] ,
+                                                          operands[3] ,
+                                                          operands[4] ,
+                                                          operands[5] })){
+                    userIdentifiers::pushIdentifier(operands.front() , line);
+                    return true;
+                } else {
+                    return false;
+                }
+            case 8:
+                if(isWordInVector(segmentRegisters() , operands.front()) && operands[1] == ":" &&
+                   isCorrectExpressionBetweenParentheses({operands[3] ,
+                                                          operands[4] ,
+                                                          operands[5] ,
+                                                          operands[6] ,
+                                                          operands[7] })){
+                    userIdentifiers::pushIdentifier(operands[2] , line);
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
                 return false;
-            }
-        } else {
-            return false;
         }
+
+
     }
     bool isCorrectExpressionBetweenParentheses(const stringsVector & expressionOperands){
         return expressionOperands[0] == "[" && expressionOperands.back() == "]" &&
@@ -590,15 +663,25 @@ namespace assembler{
                 return std::make_unique<Add>(operands);
             case CommandName::CWDE:
                 return std::make_unique<Cwde>(operands);
+            case CommandName::MODEL:
+                return std::make_unique<Model>(operands);
         }
     }
-    namespace userIdentifiers{
 
-        void pushLabel(const std::string& name , size_t line){
-            labels[name].push_back(line);
+    namespace userIdentifiers{
+        mapOfIdentifiers& getLabels(){
+            static mapOfIdentifiers labels;
+            return labels;
         }
-        void pushIdentifier(const std::string& name , size_t line){
-            identifiers[name].push_back(line);
+        mapOfIdentifiers& getIdentifiers(){
+            static mapOfIdentifiers identifiers;
+            return identifiers;
+        };
+        static void pushLabel(const std::string& name , size_t line){
+            getLabels()[name].push_back(line);
+        }
+        static void pushIdentifier(const std::string& name , size_t line){
+            getIdentifiers()[name].push_back(line);
         }
     }
 }

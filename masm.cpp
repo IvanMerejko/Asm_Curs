@@ -16,8 +16,8 @@ masm::masm(const std::string &file)
 
 void masm::createListingFile() {
     firstView();
-    /*checkAllUsedButNotDeclaredIdentifiers();
-    secondView();*/
+    checkAllUsedButNotDeclaredIdentifiers();
+    secondView();
 }
 void masm::secondView() {
     std::ifstream asmFile(asmFileName );
@@ -58,11 +58,11 @@ void masm::firstView() {
         /*
          *              LEXEM PARSING FOR FIRST TASK
          * */
-        auto lexem =  assembler::lexemParsing(wordsInString);
+      /*  auto lexem =  assembler::lexemParsing(wordsInString);
         std::cout << oneStringFromAsmFile << std::endl;
         printLexems(lexem);
 
-        assembler::syntAnaliser(std::cout , lexem);
+        assembler::syntAnaliser(std::cout , lexem);*/
 
         /*
          * if we have error with label method return true
@@ -143,8 +143,10 @@ void masm::workWithCommand() {
         endOfFile = true;
         return;
     }
-    if((isErrorInLine[line] = !_code.isOpen()))
+    if((isErrorInLine[line] = !_code.isOpen()) && !assembler::isWordInVector({"model"} , wordsInString.front()) ){
         return;
+    }
+
 
 
     std::string parameters{};
@@ -198,7 +200,7 @@ bool masm::takeLabelsFromLine() {
         if(wordsInString.front().empty()){
             return true;
         }
-        if( _code.pushLabel(std::move(assembler::label(wordsInString.front().substr(0 ,wordsInString.front().size()-1) , 0))) ){
+        if( _code.pushLabel(std::move(assembler::label(wordsInString.front().substr(0 ,wordsInString.front().size()) , 0))) ){
             return true;
         };
         for(size_t i = 0 ; i < wordsInString.size() - 1 ; ++i) {
@@ -212,11 +214,23 @@ bool masm::isLabel(std::string_view  word) {
     return word.back() == ':';
 }
 void masm::checkAllUsedButNotDeclaredIdentifiers(){
-    for(const auto& [name , lines] : assembler::userIdentifiers::labels){
+
+
+    for(const auto& [name , lines] : assembler::userIdentifiers::getLabels()){
         if( !_code.isLabelDeclared(name)){
             for(const auto line : lines){
                 isErrorInLine[line] = true;
             }
         }
     }
+
+    for(const auto& [name , lines] : assembler::userIdentifiers::getIdentifiers()){
+        if(!_data.isDeclaredIdentifier(name) && !_code.isDeclaredIdentifier(name)){
+            for(const auto& line : lines){
+                isErrorInLine[line] = true;
+            }
+        }
+    }
+
+
 }
