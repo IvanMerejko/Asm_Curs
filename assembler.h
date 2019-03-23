@@ -148,10 +148,11 @@ namespace assembler{
 
 
     void splitByDelimiters(const std::string& delimiters  , stringsVector & vector);
-
+    bool isCorrectAddressExpression(const stringsVector& operands , size_t line);
+    bool isCorrectExpressionBetweenParentheses(const stringsVector& expressionOperands);
     class Command{
     protected:
-        std::vector<std::string> operands;
+        stringsVector operands;
     public:
         Command() = default;
         explicit Command(const std::string& string){
@@ -228,6 +229,8 @@ namespace assembler{
                 :Command(string){};
         ~Add() override = default ;
         bool isCorrectOperands(size_t line) override;
+        bool isCorrectFirstOperand(size_t line);
+        bool isCorrectSecondOperand();
     };
     class Cwde : public Command{
     public:

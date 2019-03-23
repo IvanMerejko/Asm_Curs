@@ -272,7 +272,7 @@ namespace assembler{
             if(operands.size() != 3){
                 return false;
             }
-        return isCorrectFirstOperand() && isCorrectSecondOperand();
+        return isCorrectFirstOperand() && isCorrectSecondOperand() && operands[1] == ",";
     };
     bool Or::isCorrectFirstOperand() {
         return isWordInVector(registers8Vector() , operands.front()) ||
@@ -293,7 +293,21 @@ namespace assembler{
         return true;
     };
     bool And::isCorrectOperands(size_t line) {};
-    bool Add::isCorrectOperands(size_t line) {};
+    bool Add::isCorrectOperands(size_t line) {
+        if(operands.size() != 3){
+            return false;
+        }
+        return isCorrectFirstOperand(line) && isCorrectSecondOperand() && operands[1] == ",";
+
+    };
+    bool Add::isCorrectSecondOperand() {
+        return identifier("" , IdentifierType::INCORRECT_IDENTIFIER , operands.back()).isCorrectIdentifierValue();
+    }
+    bool Add::isCorrectFirstOperand(size_t line) {
+        stringsVector firstOperand{operands.front()};
+        splitByDelimiters(":[*]" , firstOperand);
+        return isCorrectAddressExpression(firstOperand , line);
+    }
     bool Cwde::isCorrectOperands(size_t line) {
         return operands.empty();
     };
@@ -511,6 +525,42 @@ namespace assembler{
             }
         }
         wordsInString = std::move(newVector);
+    }
+    bool isCorrectAddressExpression(const stringsVector& operands , size_t line){
+        if(operands.size() == 1){
+            userIdentifiers::pushIdentifier(operands.back() ,line);
+            return true;
+        }else if(operands.size() == 6){
+           if(isCorrectExpressionBetweenParentheses({operands[1] ,
+                                                     operands[2] ,
+                                                     operands[3] ,
+                                                     operands[4] ,
+                                                     operands[5] })){
+               userIdentifiers::pushIdentifier(operands.front() , line);
+               return true;
+           } else {
+               return false;
+           }
+        } else if(operands.size() == 8){
+            if(isWordInVector(segmentRegisters() , operands.front()) && operands[1] == ":" &&
+               isCorrectExpressionBetweenParentheses({operands[3] ,
+                                                      operands[4] ,
+                                                      operands[5] ,
+                                                      operands[6] ,
+                                                      operands[7] })){
+                userIdentifiers::pushIdentifier(operands[2] , line);
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    bool isCorrectExpressionBetweenParentheses(const stringsVector & expressionOperands){
+        return expressionOperands[0] == "[" && expressionOperands.back() == "]" &&
+               (isWordInVector(registers16Vector() , expressionOperands[1]) || isWordInVector(registers32Vector() , expressionOperands[1])) &&
+                expressionOperands[2] == "*" && isWordInVector({"2" , "4" , "8" , "16"} , expressionOperands[3]);
     }
     std::unique_ptr<Command> getPointerForCommandByName(std::string_view command , const std::string& operands){
         size_t numberOfCommand = 0;
