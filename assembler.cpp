@@ -669,19 +669,19 @@ namespace assembler{
     }
 
     namespace userIdentifiers{
-        mapOfIdentifiers& getLabels(){
+        mapOfIdentifiers& getUsedLabels(){
             static mapOfIdentifiers labels;
             return labels;
         }
-        mapOfIdentifiers& getIdentifiers(){
+        mapOfIdentifiers& getUsedIdentifiers(){
             static mapOfIdentifiers identifiers;
             return identifiers;
         };
         static void pushLabel(const std::string& name , size_t line){
-            getLabels()[name].push_back(line);
+            getUsedLabels()[name].push_back(line);
         }
         static void pushIdentifier(const std::string& name , size_t line){
-            getIdentifiers()[name].push_back(line);
+            getUsedIdentifiers()[name].push_back(line);
         }
     }
 }

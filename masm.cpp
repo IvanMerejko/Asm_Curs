@@ -216,7 +216,7 @@ bool masm::isLabel(std::string_view  word) {
 void masm::checkAllUsedButNotDeclaredIdentifiers(){
 
 
-    for(const auto& [name , lines] : assembler::userIdentifiers::getLabels()){
+    for(const auto& [name , lines] : assembler::userIdentifiers::getUsedLabels()){
         if( !_code.isLabelDeclared(name)){
             for(const auto line : lines){
                 isErrorInLine[line] = true;
@@ -224,7 +224,7 @@ void masm::checkAllUsedButNotDeclaredIdentifiers(){
         }
     }
 
-    for(const auto& [name , lines] : assembler::userIdentifiers::getIdentifiers()){
+    for(const auto& [name , lines] : assembler::userIdentifiers::getUsedIdentifiers()){
         if(!_data.isDeclaredIdentifier(name) && !_code.isDeclaredIdentifier(name)){
             for(const auto& line : lines){
                 isErrorInLine[line] = true;

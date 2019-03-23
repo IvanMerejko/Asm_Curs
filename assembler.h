@@ -266,8 +266,8 @@ namespace assembler{
 
     namespace userIdentifiers{
         using  mapOfIdentifiers = std::map<std::string , std::vector<size_t>>;
-        mapOfIdentifiers& getLabels();
-        mapOfIdentifiers& getIdentifiers();
+        mapOfIdentifiers& getUsedLabels();
+        mapOfIdentifiers& getUsedIdentifiers();
 
 
         static void pushLabel(const std::string& name , size_t line);
