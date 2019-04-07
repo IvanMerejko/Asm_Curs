@@ -15,11 +15,16 @@
 #include <set>
 #include <memory>
 #include <map>
+#include <numeric>
 
 namespace assembler{
 
 
 
+
+    constexpr auto MAX_DB_VALUE = static_cast<int>(std::numeric_limits<char>::max());
+    constexpr auto MAX_DW_VALUE = static_cast<int>(std::numeric_limits<short>::max());
+    constexpr auto MAX_DD_VALUE = std::numeric_limits<int>::max();
 
 
 
@@ -32,7 +37,8 @@ namespace assembler{
         INSTRUCTION,
         LABEL,
         ONE_SYMBOLE_LEXEM,
-        REGISTER
+        REGISTER,
+        NONE
     };
 
 
@@ -72,9 +78,9 @@ namespace assembler{
                 : name{std::move(name)}, type{type}, value{""} {};
 
         void setValue(const std::string &value);
-
+        size_t getNumberOfByte() const;
         bool isCorrectIdentifierValue() const;
-
+        bool isCorrectRangesForType(IdentifierType type , const std::string& value) const;
         void print() const;
     };
     struct label{
@@ -166,6 +172,8 @@ namespace assembler{
         };
         virtual ~Command() = default;
         virtual bool isCorrectOperands(size_t line) = 0;
+        virtual size_t getNumberOfByte() = 0;
+        //virtual std::string createByteCode() = 0;
 
     };
     class Mov : public Command{
@@ -177,6 +185,7 @@ namespace assembler{
         bool isCorrectOperands(size_t line) override ;
         bool isCorrectFirstOperand();
         bool isCorrectSecondOperand();
+        size_t getNumberOfByte() override ;
     };
     class Imul : public Command{
     public:
@@ -185,6 +194,8 @@ namespace assembler{
                 :Command(string){};
         ~Imul() override = default ;
         bool isCorrectOperands(size_t line) override;
+        //std::string createByteCode() override ;
+        size_t getNumberOfByte() override ;
     };
     class Idiv : public Command{
     public:
@@ -195,6 +206,8 @@ namespace assembler{
         };
         ~Idiv() override = default ;
         bool isCorrectOperands(size_t line) override;
+        size_t getNumberOfByte() override ;
+
     };
     class Or : public Command{
     public:
@@ -203,6 +216,7 @@ namespace assembler{
                 :Command(string){};
         ~Or() override = default ;
         bool isCorrectOperands(size_t line) override;
+        size_t getNumberOfByte() override ;
         bool isCorrectFirstOperand();
         bool isCorrectSecondOperand();
     };
@@ -213,6 +227,7 @@ namespace assembler{
                 :Command(string){};
         ~Cmp() override = default ;
         bool isCorrectOperands(size_t line) override;
+        size_t getNumberOfByte() override ;
         bool isCorrectFirstOperand();
         bool isCorrectSecondOperand(size_t line);
     };
@@ -223,6 +238,7 @@ namespace assembler{
                 :Command(string){};
         ~Jng() override = default ;
         bool isCorrectOperands(size_t line) override ;
+        size_t getNumberOfByte() override ;
     };
     class And : public Command{
     public:
@@ -231,6 +247,7 @@ namespace assembler{
                 :Command(string){};
         ~And() override = default ;
         bool isCorrectOperands(size_t line) override;
+        size_t getNumberOfByte() override ;
         bool isCorrectFirstOperand(size_t line);
         bool isCorrectSecondOperand();
     };
@@ -241,6 +258,7 @@ namespace assembler{
                 :Command(string){};
         ~Add() override = default ;
         bool isCorrectOperands(size_t line) override;
+        size_t getNumberOfByte() override ;
         bool isCorrectFirstOperand(size_t line);
         bool isCorrectSecondOperand();
     };
@@ -251,6 +269,7 @@ namespace assembler{
                 :Command(string){};
         ~Cwde() override = default ;
         bool isCorrectOperands(size_t line) override ;
+        size_t getNumberOfByte() override ;
     };
     class Model : public Command{
     public:
@@ -259,6 +278,7 @@ namespace assembler{
                 :Command(string){};
         ~Model() override = default ;
         bool isCorrectOperands(size_t line) override ;
+        size_t getNumberOfByte() override ;
     };
 
 
@@ -274,6 +294,17 @@ namespace assembler{
         static void pushIdentifier(const std::string& name , size_t line);
 
     }
+
+    /*
+     * TODO
+     * byte_code
+     *
+     * */
+
+    namespace linker{
+
+    }
+
 
 }
 #endif //CURS_ASSEMBLER_H

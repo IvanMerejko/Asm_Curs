@@ -10,7 +10,7 @@
 
 
 masm::masm(const std::string &file)
-    :asmFileName{file}{
+    :asmFileName{file} {
 
 };
 
@@ -27,15 +27,24 @@ void masm::secondView() {
     }
     size_t currentLine{0};
     std::string oneStringFromAsmFile;
-
+    std::string tmp;
     while (std::getline(asmFile , oneStringFromAsmFile) && currentLine <= line){
         ++currentLine;
-        std::cout << oneStringFromAsmFile << '\n' ;
+        tmp = oneStringFromAsmFile;
+
+
+
         oneStringFromAsmFile.erase(std::remove_if(oneStringFromAsmFile.begin() ,
                                                   oneStringFromAsmFile.end()   ,
                                                   [](const char symbol){ return symbol == ' ' || symbol == '\t';}),
                                    oneStringFromAsmFile.end());
-        if(!oneStringFromAsmFile.empty() && isErrorInLine[currentLine]){
+        if(!oneStringFromAsmFile.empty()){
+            std::cout << std::setw(6) << infoAboutLines[currentLine].address  <<
+                      std::setw(20) << std::left << tmp << '\n' ;
+        } else {
+            std::cout << '\n';
+        }
+        if(!oneStringFromAsmFile.empty() && infoAboutLines[currentLine].isErrorInLine){
             std::cout << "Error" << std::endl;
         }
 
@@ -54,11 +63,15 @@ void masm::firstView() {
         ++line;
 
         assembler::createVectorOfWordsFromString(oneStringFromAsmFile , wordsInString);
-        if(wordsInString.empty()) continue;
+        if(wordsInString.empty()){
+            infoAboutLines[line].isErrorInLine = false;
+            infoAboutLines[line + 1].address = infoAboutLines[line].address;
+            continue;
+        };
         /*
          *              LEXEM PARSING FOR FIRST TASK
          * */
-      /*  auto lexem =  assembler::lexemParsing(wordsInString);
+        /*auto lexem =  assembler::lexemParsing(wordsInString);
         std::cout << oneStringFromAsmFile << std::endl;
         printLexems(lexem);
 
@@ -67,8 +80,9 @@ void masm::firstView() {
         /*
          * if we have error with label method return true
          * */
-        if( (isErrorInLine[line] = takeLabelsFromLine()) || wordsInString.empty()) {
+        if( (infoAboutLines[line].isErrorInLine = takeLabelsFromLine()) || wordsInString.empty()) {
             wordsInString.clear();
+            infoAboutLines[line + 1].address = infoAboutLines[line].address;
             continue;
         }
 
@@ -77,8 +91,6 @@ void masm::firstView() {
         } else {
             workWithCommand();
         }
-        /*commandType != AsmLanguage::AssemblerReservedWordType::NONE ? workWithCommand() : workWithIdentifier();
-*/
 
         wordsInString.clear();
 
@@ -119,11 +131,13 @@ void masm::workWithCommand() {
    std::string tmp{wordsInString.front()};
     std::transform(tmp.begin() , tmp.end() , tmp.begin() , ::tolower);
     if(tmp == assembler::instructionsVector().front()){ // .data
-        if((isErrorInLine[line] =  _data.isOpen() )) {
+        if((infoAboutLines[line].isErrorInLine =  _data.isOpen() )) {
             return;
         };
         _data.open();
         lastOpenedSegment = "data";
+        infoAboutLines[line].address = "0";
+        infoAboutLines[line + 1].address = "0";
         return;
     }
     /*
@@ -131,11 +145,13 @@ void masm::workWithCommand() {
      * if one code segment is opened and tried open one more  - ERROR
      **/
     if(tmp == assembler::instructionsVector().at(1)){ // .code
-        if( (isErrorInLine[line] =  _code.isOpen() ) ) {
+        if( (infoAboutLines[line].isErrorInLine =  _code.isOpen() ) ) {
             return;
         }
         _code.open();
         lastOpenedSegment = "code";
+        infoAboutLines[line].address = "0";
+        infoAboutLines[line + 1].address = "0";
         return;
     }
 
@@ -143,7 +159,8 @@ void masm::workWithCommand() {
         endOfFile = true;
         return;
     }
-    if((isErrorInLine[line] = !_code.isOpen()) && !assembler::isWordInVector({"model"} , wordsInString.front()) ){
+    if((infoAboutLines[line].isErrorInLine = !_code.isOpen()) && !assembler::isWordInVector({"model"} , wordsInString.front()) ){
+
         return;
     }
 
@@ -151,33 +168,47 @@ void masm::workWithCommand() {
 
     std::string parameters{};
     for(size_t i = 1 ; i < wordsInString.size() ; ++i) parameters += wordsInString.at(i) + " ";
-    isErrorInLine[line] = !assembler::getPointerForCommandByName(wordsInString.front() , parameters)->isCorrectOperands(line);
-
+    auto command = assembler::getPointerForCommandByName(wordsInString.front() , parameters);
+    infoAboutLines[line].isErrorInLine = !command->isCorrectOperands(line);
+    infoAboutLines[line + 1].address = std::to_string(std::atoi(infoAboutLines[line].address.c_str()) + command->getNumberOfByte());
+   // infoAboutLines[line + 1].address = infoAboutLines[line].address ;
 }
 void masm::workWithIdentifier() {
 
 
 
-    if((isErrorInLine[line] = ( !_data.isOpen() && !_code.isOpen())))
+    if((infoAboutLines[line].isErrorInLine = ( !_data.isOpen() && !_code.isOpen()))){
+        currentAddressEqualsToPreviousAddress();
         return;
+    }
 
-    if( (isErrorInLine[line] = (wordsInString.size() != 3 ) ) )
+
+    if( (infoAboutLines[line].isErrorInLine = (wordsInString.size() != 3 ) ) ){
+        currentAddressEqualsToPreviousAddress();
         return;
+    }
+
 
     auto identifierType = assembler::identifierType(wordsInString.at(1));
 
-    if( (isErrorInLine[line] =  (identifierType == assembler::IdentifierType::INCORRECT_IDENTIFIER)) )
-        return  ;
+    if( (infoAboutLines[line].isErrorInLine =  (identifierType == assembler::IdentifierType::INCORRECT_IDENTIFIER)) ){
+        currentAddressEqualsToPreviousAddress();
+        return;
+    }
 
     typename assembler::identifier new_identifier (wordsInString.front() , identifierType , wordsInString.back());
 
-    if( (isErrorInLine[line] =  !new_identifier.isCorrectIdentifierValue()))
-        return ;
+    if( (infoAboutLines[line].isErrorInLine =  !new_identifier.isCorrectIdentifierValue())){
+        currentAddressEqualsToPreviousAddress();
+        return;
+    }
+
 
     /*
      * if we can`t push identifier - ERROR
      * */
-    isErrorInLine[line] = pushIdentifier(std::move(new_identifier)) ;
+    infoAboutLines[line + 1].address = std::to_string(std::atoi(infoAboutLines[line].address.c_str()) + new_identifier.getNumberOfByte());
+    infoAboutLines[line].isErrorInLine = pushIdentifier(std::move(new_identifier)) ;
 }
 bool masm::pushIdentifier(assembler::identifier&& new_identifier) {
     if(lastOpenedSegment == "data"){
@@ -189,7 +220,7 @@ bool masm::pushIdentifier(assembler::identifier&& new_identifier) {
 }
 bool masm::takeLabelsFromLine() {
     //  ?
-    if( !isLabel(wordsInString.front()) /* && (isErrorInLine[line] =  !_code.isOpen())*/ )
+    if( !isLabel(wordsInString.front()) /* && (infoAboutLines[line].isErrorInLine =  !_code.isOpen())*/ )
         return false;
 
     while (!wordsInString.empty()  && isLabel(wordsInString.front()) ){
@@ -219,7 +250,7 @@ void masm::checkAllUsedButNotDeclaredIdentifiers(){
     for(const auto& [name , lines] : assembler::userIdentifiers::getUsedLabels()){
         if( !_code.isLabelDeclared(name)){
             for(const auto line : lines){
-                isErrorInLine[line] = true;
+                infoAboutLines[line].isErrorInLine = true;
             }
         }
     }
@@ -227,10 +258,13 @@ void masm::checkAllUsedButNotDeclaredIdentifiers(){
     for(const auto& [name , lines] : assembler::userIdentifiers::getUsedIdentifiers()){
         if(!_data.isDeclaredIdentifier(name) && !_code.isDeclaredIdentifier(name)){
             for(const auto& line : lines){
-                isErrorInLine[line] = true;
+                infoAboutLines[line].isErrorInLine = true;
             }
         }
     }
 
 
+}
+void masm::currentAddressEqualsToPreviousAddress() {
+    infoAboutLines[line].address = infoAboutLines[line - 1].address;
 }

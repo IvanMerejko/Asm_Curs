@@ -11,6 +11,11 @@
 
 class masm {
 private:
+    struct info{
+        bool isErrorInLine;
+        std::string address;
+        assembler::WordType type;
+    };
 public:
     std::string asmFileName;
     std::string listFileName;
@@ -23,7 +28,7 @@ public:
     bool endOfFile{false};
 
     size_t line{0};
-    std::map<int , bool> isErrorInLine{};
+    std::map<int , info> infoAboutLines{};
 public:
     explicit masm(const std::string &);
     void createListingFile() ;
@@ -39,6 +44,7 @@ private:
     void printLexems(const assembler::lexem_type& lexems);
     std::string getStringByType(const std::string& word , assembler::WordType type);
     void checkAllUsedButNotDeclaredIdentifiers();
+    void currentAddressEqualsToPreviousAddress() ;
 };
 
 

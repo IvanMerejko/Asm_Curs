@@ -11,11 +11,22 @@
 #include <iostream>
 #include <iomanip>
 #include "assembler.h"
+
 namespace assembler{
 
     void identifier::setValue(const std::string &value) {
         this->value = value;
     };
+    size_t identifier::getNumberOfByte() const {
+        switch (type){
+            case IdentifierType::DB:
+                return 1;
+            case IdentifierType::DW:
+                return 2;
+            case IdentifierType::DD:
+                return 3;
+        }
+    }
     bool identifier::isCorrectIdentifierValue() const {
             auto positionOfMinusInValue = std::find(value.begin(), value.end(), '-');
             auto tmp = positionOfMinusInValue == value.begin() ? value.substr(1, value.size()) : value;
@@ -36,6 +47,7 @@ namespace assembler{
                         if (auto one_value = static_cast<int>(it); one_value < 48 || one_value > 49) {
                             return false;
                         }
+
                     }
                     break;
                 default:
@@ -45,10 +57,24 @@ namespace assembler{
                             return false;
                         }
                     }
+                    if(!isCorrectRangesForType(IdentifierType::DB , tmp)){
+                        return false;
+                    }
                     break;
             }
             return true;
         };
+    bool identifier::isCorrectRangesForType(IdentifierType type , const std::string &value) const {
+        switch (type){
+            case IdentifierType::DB:
+                return std::stoi(value) < MAX_DB_VALUE;
+            case IdentifierType::DW:
+                return std::stoi(value) < MAX_DW_VALUE;
+            case IdentifierType::DD:
+                return std::stoi(value) < MAX_DD_VALUE;
+
+        }
+    }
     void identifier::print() const {}
 
     bool segment::isOpen() const {
@@ -266,12 +292,19 @@ namespace assembler{
     bool Mov::isCorrectSecondOperand() {
         return identifier{"" , IdentifierType::INCORRECT_IDENTIFIER , operands.back()}.isCorrectIdentifierValue();
     }
+    size_t Mov::getNumberOfByte() {
+        return 0;
+    }
     /************   Mov     *************/
 
     /************   Imul     *************/
     bool Imul::isCorrectOperands(size_t line) {
         return operands.size() == 1 && isRegister(operands.front());
     };
+
+    size_t Imul::getNumberOfByte() {
+        return isWordInVector(registers32Vector() , operands.front()) ? 3 : 2;
+    }
     /************   Imul     *************/
 
     /************   Idiv     *************/
@@ -279,6 +312,9 @@ namespace assembler{
 
         return isCorrectAddressExpression(operands , line);
     };
+    size_t Idiv::getNumberOfByte() {
+        return 0;
+    }
     /************   Idiv     *************/
 
     /************   Or     *************/
@@ -293,6 +329,9 @@ namespace assembler{
     }
     bool Or::isCorrectSecondOperand() {
         return isRegister(operands.back());
+    }
+    size_t Or::getNumberOfByte() {
+        return 0;
     }
     /************   Or     *************/
 
@@ -311,6 +350,9 @@ namespace assembler{
         splitByDelimiters(":[*]" , firstOperand);
         return isCorrectAddressExpression(firstOperand , line);
     }
+    size_t Cmp::getNumberOfByte() {
+        return 0;
+    }
     /************   Cmp     *************/
 
     /************   Jng     *************/
@@ -321,6 +363,9 @@ namespace assembler{
         userIdentifiers::pushLabel(operands.front() , line);
         return true;
     };
+    size_t Jng::getNumberOfByte() {
+        return 0;
+    }
     /************   Jng     *************/
 
     /************   And     *************/
@@ -337,6 +382,9 @@ namespace assembler{
     }
     bool And::isCorrectSecondOperand() {
         return isRegister(operands.back());
+    }
+    size_t And::getNumberOfByte() {
+        return 0;
     }
     /************   And     *************/
 
@@ -356,12 +404,18 @@ namespace assembler{
         splitByDelimiters(":[*]" , firstOperand);
         return isCorrectAddressExpression(firstOperand , line);
     }
+    size_t Add::getNumberOfByte() {
+        return 0;
+    }
     /************   Add     *************/
 
     /************   Cwde     *************/
     bool Cwde::isCorrectOperands(size_t line) {
         return operands.empty();
     };
+    size_t Cwde::getNumberOfByte() {
+        return 0;
+    }
     /************   Cwde     *************/
     /************   Model     *************/
     bool Model::isCorrectOperands(size_t line) {
@@ -369,6 +423,9 @@ namespace assembler{
                isWordInVector({"small"} , operands[1]) &&
                operands[2] == "}";
     };
+    size_t Model::getNumberOfByte() {
+        return 0;
+    }
     /************   Model     *************/
     void removeSpacesAndTabs(std::string& string){
         string.erase(std::remove_if(string.begin() , string.end() , [](char s){
