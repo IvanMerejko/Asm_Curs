@@ -39,7 +39,7 @@ void masm::secondView() {
                                                   [](const char symbol){ return symbol == ' ' || symbol == '\t';}),
                                    oneStringFromAsmFile.end());
         if(!oneStringFromAsmFile.empty()){
-            std::cout << std::setw(6) << infoAboutLines[currentLine].address  <<
+            std::cout << std::setw(6) << std::hex << std::uppercase << std::atoi(infoAboutLines[currentLine].address.c_str())  <<
                       std::setw(20) << std::left << tmp << '\n' ;
         } else {
             std::cout << '\n';
@@ -170,7 +170,8 @@ void masm::workWithCommand() {
     for(size_t i = 1 ; i < wordsInString.size() ; ++i) parameters += wordsInString.at(i) + " ";
     auto command = assembler::getPointerForCommandByName(wordsInString.front() , parameters);
     infoAboutLines[line].isErrorInLine = !command->isCorrectOperands(line);
-    infoAboutLines[line + 1].address = std::to_string(std::atoi(infoAboutLines[line].address.c_str()) + command->getNumberOfByte());
+    auto value = command->getNumberOfByte();
+    infoAboutLines[line + 1].address = std::to_string(std::atoi(infoAboutLines[line].address.c_str()) + value);
    // infoAboutLines[line + 1].address = infoAboutLines[line].address ;
 }
 void masm::workWithIdentifier() {

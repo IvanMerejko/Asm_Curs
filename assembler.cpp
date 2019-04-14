@@ -14,6 +14,13 @@
 
 namespace assembler{
 
+    /*
+     *  TODO
+     *
+     *  address expresion numbers of byte
+     *
+     * */
+
     void identifier::setValue(const std::string &value) {
         this->value = value;
     };
@@ -289,11 +296,23 @@ namespace assembler{
     bool Mov::isCorrectFirstOperand() {
         return isRegister(operands.front());
     }
+    /*
+     *  TODO
+     *
+     *  check range of value
+     *
+     * */
     bool Mov::isCorrectSecondOperand() {
-        return identifier{"" , IdentifierType::INCORRECT_IDENTIFIER , operands.back()}.isCorrectIdentifierValue();
+        auto type = isWordInVector(registers8Vector()  , operands.front()) ?  IdentifierType::DB :
+                    isWordInVector(registers16Vector() , operands.front()) ? IdentifierType::DW :
+                    isWordInVector(registers32Vector() , operands.front()) ? IdentifierType::DD :
+                                                                             IdentifierType::INCORRECT_IDENTIFIER;
+        return identifier{"" , type , operands.back()}.isCorrectIdentifierValue();
     }
     size_t Mov::getNumberOfByte() {
-        return 0;
+        size_t tmp = isWordInVector(registers8Vector()  , operands.front()) ?  1 :
+                     isWordInVector(registers16Vector() , operands.front()) ? 2 : 4;
+        return 2 + tmp;
     }
     /************   Mov     *************/
 
@@ -301,7 +320,6 @@ namespace assembler{
     bool Imul::isCorrectOperands(size_t line) {
         return operands.size() == 1 && isRegister(operands.front());
     };
-
     size_t Imul::getNumberOfByte() {
         return isWordInVector(registers32Vector() , operands.front()) ? 3 : 2;
     }
@@ -331,7 +349,13 @@ namespace assembler{
         return isRegister(operands.back());
     }
     size_t Or::getNumberOfByte() {
-        return 0;
+        if(isWordInVector(registers32Vector(), operands.front()) &&
+           isWordInVector(registers32Vector(), operands.back())){
+            return 3;
+        } else {
+            return 2;
+        }
+
     }
     /************   Or     *************/
 
@@ -364,6 +388,10 @@ namespace assembler{
         return true;
     };
     size_t Jng::getNumberOfByte() {
+        switch (operands.size()){
+            case 1:
+
+        }
         return 0;
     }
     /************   Jng     *************/
@@ -414,7 +442,7 @@ namespace assembler{
         return operands.empty();
     };
     size_t Cwde::getNumberOfByte() {
-        return 0;
+        return 2;
     }
     /************   Cwde     *************/
     /************   Model     *************/
